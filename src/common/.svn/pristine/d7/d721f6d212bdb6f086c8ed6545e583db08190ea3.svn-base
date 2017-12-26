@@ -1,0 +1,78 @@
+package common;
+
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+
+import provided.datapacket.*;
+
+/**
+ * Connection interface.
+ * It define a particular pair of User and chatroom, which help to clarify the process of
+ * updating user list(connection list, in fact).
+ * It contains the user and chatroom associated with this connection.
+ */
+public interface IConnection extends Remote{
+	
+	/**
+	 * The name that the IUser object will use to bound to in the RMI Registry
+	 */
+	public static final String BOUND_NAME = "Connection";
+
+	/**
+	 * The port that the chatroom will use to communicate with the IChatServer object
+	 */
+	public static final int BOUND_PORT = 2101;
+	
+	/**
+	 * Get the user associated with the connection
+	 * @return the user
+	 * @throws RemoteException exception
+	 **/
+	public IUser getUser() throws RemoteException;
+
+	/**
+	 * Get the chatroom that it associated with the connection
+	 * @return an IChatroom type
+	 * @throws RemoteException exception
+	 * */
+	public IChatroom getChatroom() throws RemoteException;
+
+	/**
+	 * Add a Connection stub into the Connection list of the chatroom in this connection
+	 * @param connectionStub Connection stub to be added into the Connection list of the chatroom in this connection
+	 * @return whether allowed to add the connection stub
+	 * @throws RemoteException exception
+	 */
+	public boolean addConnectionStubToChatroom(IConnection connectionStub) throws RemoteException;
+
+	/**
+	 * Remove the Connection stub from the Connection list of the chatroom in this connection
+	 * @param connectionStub Connection stub to be removed from the Connection list of the chatroom in this connection
+	 * @return whether allowed to remove the connection stub
+	 * @throws RemoteException exception
+	 */
+	public boolean RemoveConnectionStubFromChatroom(IConnection connectionStub) throws RemoteException;
+
+	/**
+	 * Receive and process the message sent by any chatroom
+	 * @param message The message(dataPacket) that has been sent
+	 * @throws RemoteException exception
+	 * */
+	public void receive(ADataPacket message) throws RemoteException;
+	
+	/**
+	 * Get the new command to deal with the unknown datapacket from the sender
+	 * @param request  The data type  which need sender to give command to solve
+	 * @return a new command to deal with the unknown datapacket
+	 * @throws RemoteException exception
+	 */
+	public IDataPacketAlgoCmd<?> getNewCommand(Class<?> request) throws RemoteException;
+
+	/**
+	 * Initialize and set the datapacket algorithm of the connection.
+	 * @param dataPacketAlgo the dataPacket algorithm need to be set
+	 * @throws RemoteException exception
+	 */
+	public void setDataPacketAlgo(DataPacketAlgo<String, IConnection> dataPacketAlgo) throws RemoteException;
+
+}

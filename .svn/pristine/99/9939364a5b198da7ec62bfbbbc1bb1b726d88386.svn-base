@@ -1,0 +1,16 @@
+package command;
+
+import common.IRequestCmdType;
+
+public class UnknownCmd implements IRequestCmdType{
+	private Class<?> cmdId;
+	
+	public UnknownCmd(Class<?> cmdId) {
+		this.cmdId = cmdId;
+	}
+
+	@Override
+	public Class<?> getCmdId() {
+		return cmdId;
+	}
+}

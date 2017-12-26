@@ -1,0 +1,27 @@
+package common;
+
+import provided.datapacket.DataPacket;
+
+/**
+ * Defined a specific datapacket for our API implementation
+ * @param <D> - A data type held by the host
+ */
+public class IDataPacket<D> extends DataPacket<D, IConnection>{
+
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -2397519911916536391L;
+
+	/**
+	 * The constructor of DataPacketGroupF
+	 * @param c - An index for data type
+	 * @param data - a data type held by the host
+	 * @param sender - An IChatServer type
+	 */
+	public IDataPacket(Class<D> c, D data, IConnection sender) {
+		super(c, data, sender);
+	}
+
+}

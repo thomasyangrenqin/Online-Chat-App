@@ -1,0 +1,46 @@
+package common;
+
+import java.rmi.Remote;
+
+import provided.datapacket.ADataPacket;
+
+/**
+ * Connection interface.
+ * It define a particular pair of User and chatroom, which help to clarify the process of
+ * updating user list(connection list, in fact).
+ * It contains the user and chatroom associated with this connection.
+ */
+public interface IConnection extends Remote{
+	
+	/**
+	 * Get the user associated with the connection
+	 * @return the user
+	 **/
+	public IUser getUser();
+
+	/**
+	 * Get the chatroom that it associated with the connection
+	 * @return an IChatroom type
+	 * */
+	public IChatroom getChatroom();
+
+	/**
+	 * Add a Connection stub into the Connection list of the chatroom in this connection
+	 * @param connectionStub Connection stub to be added into the Connection list of the chatroom in this connection
+	 * @return whether allowed to add the connection stub
+	 */
+	public boolean addConnectionStubToChatroom(IConnection connectionStub);
+
+	/**
+	 * Remove the Connection stub from the Connection list of the chatroom in this connection
+	 * @param connectionStub Connection stub to be removed from the Connection list of the chatroom in this connection
+	 * @return whether allowed to remove the connection stub
+	 */
+	public boolean RemoveConnectionStubFromChatroom(IConnection connectionStub);
+
+	/**
+	 * Receive and process the message sent by any chatroom
+	 * @param message The message(dataPacket) that has been sent
+	 * */
+	public void receive(ADataPacket message);
+}

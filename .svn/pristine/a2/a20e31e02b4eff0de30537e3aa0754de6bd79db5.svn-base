@@ -1,0 +1,26 @@
+package command;
+
+import common.DataPacketAlgoCmd;
+import common.IInstallCmdType;
+
+public class InstallCmd implements IInstallCmdType{
+	
+	private DataPacketAlgoCmd<?> cmd;
+	private Class<?> cmdId;
+	
+	public InstallCmd(Class<?> cmdId, DataPacketAlgoCmd<?> cmd) {
+		this.cmd = cmd;
+		this.cmdId = cmdId;
+	}
+
+	@Override
+	public DataPacketAlgoCmd<?> getCmd() {
+		return cmd;
+	}
+
+	@Override
+	public Class<?> getCmdId() {
+		// TODO Auto-generated method stub
+		return cmdId;
+	}
+}

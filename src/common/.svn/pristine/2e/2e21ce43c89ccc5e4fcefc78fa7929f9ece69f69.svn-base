@@ -1,0 +1,16 @@
+package common;
+
+import provided.datapacket.ADataPacketAlgoCmd;
+
+/**
+ * Defined a more specific command type for our API implementation
+ * @param <D> - A generic type for data type held by the host
+ */
+public abstract class IDataPacketAlgoCmd<D> extends ADataPacketAlgoCmd<String, D, IConnection, ICmdAdapter,  IDataPacket<D>>{
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8228071424512853288L;
+
+}

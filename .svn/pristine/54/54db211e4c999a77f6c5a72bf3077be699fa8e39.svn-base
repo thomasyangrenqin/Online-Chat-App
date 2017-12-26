@@ -1,0 +1,71 @@
+package view;
+
+import common.IChatRoom;
+
+/**
+ * main GUI to model adapter
+ * @param <TDropListItem>
+ */
+public interface IModelAdapter<TDropListItem> {
+
+	/**
+	 * No-op singleton implementation of IModelAdapter
+	 */
+	@SuppressWarnings("rawtypes")
+	public static final IModelAdapter NULL_OBJECT = new IModelAdapter() {
+
+		public String connectTo(String remoteHost) {
+			return ("no connect");
+		}
+
+		public void quit() {
+
+		}
+
+		public void setUsername(String username) {
+
+		}
+
+		public void joinRoom(Object chatroom) {
+
+		}
+
+		public void createRoom() {
+
+		}
+		
+		public void removeChatRoom(IChatRoom chatroom) {
+			
+		}
+
+	};
+
+	/**
+	 * @param remoteHost  remote host ip address
+	 * @return  status string
+	 */
+	public String connectTo(String remoteHost);
+
+	/**
+	 * 
+	 */
+	public void quit();
+
+	/**
+	 * @param username
+	 */
+	public void setUsername(String username);
+
+	/**
+	 * @param chatroom
+	 */
+	public void joinRoom(Object chatroom);
+
+	/**
+	 * 
+	 */
+	public void createRoom();
+	
+	public void removeChatRoom(IChatRoom chatroom);
+
+}

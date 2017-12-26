@@ -1,0 +1,119 @@
+package model;
+
+import java.rmi.RemoteException;
+import java.util.HashSet;
+import java.util.UUID;
+
+import common.IChatRoom;
+import common.IUser;
+
+/**
+ * User class
+ */
+public class User implements IUser {
+	/**
+	 *  User name of the user
+	 */
+	public String name;
+	/**
+	 * chatrooms of the user
+	 */
+	public HashSet<IChatRoom> chatrooms = new HashSet<IChatRoom>();
+	/**
+	 * the id of the user
+	 */
+	private UUID uuid = UUID.randomUUID();
+	/**
+	 * the ip address of the user
+	 */
+	private String ip;
+	/**
+	 * chatrooms of the user
+	 */
+	public HashSet<IUser> connectedUserList = new HashSet<IUser>();
+	
+
+	/**
+	 * Constructor of user
+	 * @param name  user name
+	 * @param ip  ip address
+	 */
+	public User(String name, String ip) {
+		this.name = name;
+		this.ip = ip;
+	}
+
+	@Override
+	public String getName() throws RemoteException {
+		return this.name;
+	}
+
+	
+	public void setName(String name) throws RemoteException {
+		this.name = name;
+	}
+
+
+	public String getIP() throws RemoteException {
+		return ip;
+	}
+
+
+
+	public boolean addRoom(IChatRoom chatroom) throws RemoteException {
+		for(IChatRoom ichatroom : chatrooms){
+			if(ichatroom.getUUID().equals(chatroom.getUUID())) return false;
+		}
+		chatrooms.add(chatroom);
+		return true;
+//		if (chatrooms.contains(chatroom)) {
+//			return false;
+//		}
+//		chatrooms.add(chatroom);
+//		return true;
+	}
+
+	
+	public boolean removeRoom(IChatRoom chatroom) throws RemoteException {
+		for(IChatRoom ichatroom : chatrooms){
+			if(ichatroom.getUUID().equals(chatroom.getUUID())){
+				chatrooms.remove(chatroom);
+				return true;
+			}
+		}
+		return false;
+//		if (!chatrooms.contains(chatroom)) {
+//			return false;
+//		}
+//		chatrooms.remove(chatroom);
+//		return true;
+	}
+
+//	@Override
+//	public IConnection joinChatroom(IChatroom chatroom) {
+//		IConnection connection = new Connection(this, chatroom);
+//		return connection;
+//	}
+
+	@Override
+	public HashSet<IChatRoom> getChatRooms() throws RemoteException{
+		return chatrooms;
+	}
+	
+//	@Override
+//	public void setChatrooms(HashSet chatrooms) throws RemoteException{
+//		this.chatrooms.clear();
+//		this.chatrooms.addAll(chatrooms);
+//	}
+	
+	@Override
+	public void connect(IUser userStub) throws RemoteException{
+		
+	}
+
+	@Override
+	public UUID getUUID() throws RemoteException {
+		return uuid;
+	}
+	
+}

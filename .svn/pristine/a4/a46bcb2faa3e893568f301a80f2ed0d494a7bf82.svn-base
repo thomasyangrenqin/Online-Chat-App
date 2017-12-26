@@ -1,0 +1,71 @@
+package model;
+
+import java.awt.Container;
+
+import javax.swing.ImageIcon;
+import javax.swing.JPanel;
+
+/**
+ * This adapter that allows model to talk to 
+ * view for chat room sub-panel and the main model
+ */
+public interface IMiniViewAdapter {
+	
+	/**
+	 * refresh the chat room content
+	 */
+	public void refresh();
+
+	/**
+	 * append content to chat room
+	 * @param name sender's name
+	 * @param text content
+	 */
+	public void append(String name, String text);
+
+	/**
+	 * create image view 
+	 * @return image container
+	 */
+	public Container createImageView();
+
+	/**
+	 * close chatroom
+	 * @param miniview panel to close
+	 */
+	public void closeRoom(JPanel miniview);
+
+	/**
+	 * append image to chat room
+	 * @param name sender name
+	 * @param data image icon
+	 */
+	public void append(String name, ImageIcon data);
+
+
+	/**
+	 * A "null adapter" that does nothing
+	 */
+	public static final IMiniViewAdapter NULL_ADAPTER = new IMiniViewAdapter() {
+
+		public void refresh() {
+
+		}
+
+		public void append(String name, String text) {
+
+		}
+
+		public Container createImageView() {
+			return null;
+		}
+
+		public void closeRoom(JPanel miniview) {
+
+		}
+
+		public void append(String name, ImageIcon data) {
+
+		}
+	};
+}

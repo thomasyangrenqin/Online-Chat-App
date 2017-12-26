@@ -1,0 +1,217 @@
+package controller;
+
+import java.awt.Container;
+import java.awt.EventQueue;
+import java.io.File;
+import java.rmi.RemoteException;
+import java.util.HashSet;
+
+import javax.swing.ImageIcon;
+import javax.swing.JPanel;
+
+import common.IChatRoom;
+import common.IReceiver;
+import util.Receiver;
+import util.User;
+import model.IMiniViewAdapter;
+import model.MainModel;
+import model.MiniModel;
+import view.IMiniModelAdapter;
+import view.MiniGUI;
+
+/**
+ * @author 
+ *
+ */
+public class MiniController {
+	
+	/**
+	 * This field represents the model.
+	 */
+	private MiniModel miniModel; 
+	/**
+	 * This field represents the view.
+	 */
+	@SuppressWarnings("rawtypes")
+	private MiniGUI miniGUI; 
+
+	/**
+	 * Main model object
+	 */
+	private MainModel model;
+	/**
+	 * chat connection
+	 */
+	private Receiver receiver;
+
+	/**
+	 * set main model
+	 * @param model 
+	 */
+	public void setMainModel(MainModel model) {
+		this.model = model;
+	}
+
+	/**
+	 * set chat connection
+	 * @param connection
+	 */
+	public void setReceiver(Receiver receiver) {
+		this.receiver = receiver;
+	}
+
+	/**
+	 * Controller constructor builds the system
+	 * @param view   chatroom UI
+	 * @param model   chatroom model
+	 */
+	public MiniController(MiniGUI<?> view, MiniModel model) {
+		this.miniGUI = view;
+		this.miniModel = model;
+	}
+
+	/**
+	 *  Constructor
+	 */
+	public MiniController(IChatRoom chatRoom, User user, Receiver receiver) {
+
+		miniGUI = new MiniGUI<Object>(new IMiniModelAdapter<Object>() {
+			@Override
+			public void closeRoom() {
+				miniModel.closeRoom(miniGUI);
+				model.closeRoom(miniGUI);
+			}
+
+			@Override
+			public void sendMsg(String msg) {
+				miniModel.sendMsg(msg);
+			}
+
+//			@Override
+//			public void addUser(String remotehost) {
+//				
+//			}
+//
+//			@Override
+//			public void removeUser(Object auser) {
+//				// TODO Auto-generated method stub
+//
+//			}
+//
+//			@Override
+//			public void sendimg(ImageIcon img) {
+//				try {
+//					IChatroom chatroom = connection.getChatroom();
+//					IDataPacket<ImageIcon> packet = new IDataPacket<ImageIcon>(ImageIcon.class, img,
+//							connection);
+//					chatroom.send(packet);
+//				} catch (RemoteException e) {
+//					System.out.println("ERROR: send img fail");
+//					e.printStackTrace();
+//				}
+//			}
+			
+			public void sendFile(ImageIcon img){
+				miniModel.sendFile(img);
+			}
+			
+			public void sendFile(File file){
+				miniModel.sendFile(file);
+			}
+
+			@SuppressWarnings({ })
+			@Override
+			public Iterable<IReceiver> getChatStubs() {
+				try {
+					return miniModel.getChatStubs();
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return null;
+				}
+			}
+
+		});
+
+		miniModel = new MiniModel(new IMiniViewAdapter() {
+
+			@Override
+			public void refresh() {
+				try {
+					miniGUI.refresh();
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			}
+
+			@Override
+			public void append(String name, String text) {
+				miniGUI.append(name, text);
+			}
+
+			@Override
+			public Container createImageView() {
+				// TODO Auto-generated method stub
+				return miniGUI.createImageView();
+			}
+
+			@Override
+			public void closeRoom(JPanel miniview) {
+				model.closeRoom(miniview);
+
+			}
+
+			@Override
+			public void append(String name, ImageIcon data) {
+				miniGUI.append(name, data);
+			}
+
+		}, chatRoom, user, receiver);
+	}
+
+	/**
+	 * get chatroom model
+	 * @return chatroot model
+	 */
+	public MiniModel getMiniModel() {
+		return this.miniModel;
+	}
+
+	/**
+	 * get chatroom UI
+	 * @return chatroom ui
+	 */
+	public MiniGUI<?> getMiniView() {
+		return this.miniGUI;
+	}
+
+	/**
+	 * Start the system
+	 * @param connection   chat connection object
+	 * @throws RemoteException 
+	 */
+	public void start() throws RemoteException {
+		miniGUI.start();
+		miniModel.start();
+	}
+
+	/**
+	 * Launch the application.
+	 * @param args Arguments given by the system or command line.
+	 */
+	public static void main(String[] args) {
+		EventQueue.invokeLater(new Runnable() { // Java specs say that the system must be constructed on the GUI event thread.
+			public void run() {
+				try {
+					MainController controller = new MainController(); // instantiate the system
+					controller.start(); // start the system
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+	
+}

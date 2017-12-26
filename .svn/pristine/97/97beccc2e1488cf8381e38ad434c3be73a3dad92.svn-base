@@ -1,0 +1,7 @@
+package model;
+
+import common.ICmd2ModelAdapter;
+
+public interface Cmd2ViewAdapter extends ICmd2ModelAdapter{
+	public void refresh();
+}

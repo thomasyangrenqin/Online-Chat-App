@@ -1,0 +1,194 @@
+package view;
+
+import javax.swing.JPanel;
+import javax.swing.JButton;
+import javax.swing.JTextField;
+
+import common.IReceiver;
+
+import javax.swing.JLabel;
+import java.awt.*;
+
+import java.awt.event.ActionListener;
+import java.rmi.RemoteException;
+import java.awt.event.ActionEvent;
+import javax.swing.JFileChooser;
+
+import javax.swing.Box;
+import javax.swing.ImageIcon;
+import javax.swing.JScrollPane;
+import javax.swing.BoxLayout;
+
+/**
+ * Chatroom GUI
+ * @param <UserItem>
+ */
+public class MiniGUI<UserItem> extends JPanel {
+
+	/**
+	 * SerialVersionUId for the class.
+	 */
+	private static final long serialVersionUID = 201611022007L;
+	private JTextField textField_1;
+	JPanel panel_2 = new JPanel();
+	JPanel panel_4 = new JPanel();
+
+	/**
+	 * The adapter to the model.
+	 */
+	private IMiniModelAdapter<UserItem> model;
+
+	/**
+	 * Create the panel.
+	 * @param ma model to mini view adpater
+	 */
+	public MiniGUI(IMiniModelAdapter<UserItem> ma) {
+		model = ma;
+		setSize(700, 400);
+		setLayout(new BorderLayout(0, 0));
+
+		Panel panel = new Panel();
+
+		add(panel, BorderLayout.NORTH);
+
+		JButton btnRefresh = new JButton("Refresh");
+		btnRefresh.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					refresh();
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
+		});
+		btnRefresh.setToolTipText("Refresh the chat room.");
+		panel.add(btnRefresh);
+				
+						JScrollPane scrollPane = new JScrollPane();
+						add(scrollPane, BorderLayout.CENTER);
+						
+						scrollPane.setViewportView(panel_2);
+						panel_2.setLayout(new BoxLayout(panel_2, BoxLayout.Y_AXIS));
+				
+				JScrollPane scrollPane_1 = new JScrollPane();
+				add(scrollPane_1, BorderLayout.EAST);
+				
+				scrollPane_1.setViewportView(panel_4);
+				panel_4.setLayout(new BoxLayout(panel_4, BoxLayout.Y_AXIS));
+
+		JPanel panel_1 = new JPanel();
+		add(panel_1, BorderLayout.SOUTH);
+
+		JButton btnUploadFile = new JButton("Upload an image");
+		btnUploadFile.setToolTipText("Click to upload an image file to the chat room.");
+		btnUploadFile.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				JFileChooser jfc = new JFileChooser();
+				jfc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+				jfc.showDialog(new JLabel(), "Choose a File");
+				ImageIcon icon = new ImageIcon(jfc.getSelectedFile().getAbsolutePath());
+				//				ImageIcon icon = new ImageIcon(jfc.getSelectedFile().getPath());
+				Image ob = icon.getImage();
+				ImageIcon m = new ImageIcon(ob);
+				model.sendFile(m);
+			}
+		});
+		panel_1.add(btnUploadFile);
+
+		JLabel lblNewMessage = new JLabel("New Message:");
+		panel_1.add(lblNewMessage);
+
+		textField_1 = new JTextField();
+		textField_1.setToolTipText("Please input a new message.");
+		panel_1.add(textField_1);
+		textField_1.setColumns(10);
+
+		JButton btnSend = new JButton("Send");
+		btnSend.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				model.sendMsg(textField_1.getText());
+			}
+		});
+		btnSend.setToolTipText("Click to send a message");
+		panel_1.add(btnSend);
+
+		JButton btnExit = new JButton("Exit");
+		btnExit.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				model.closeRoom();
+			}
+		});
+		btnExit.setToolTipText("Click to exit the chat room.");
+		panel_1.add(btnExit);
+	}
+
+	/**
+	 * append message to chat room
+	 * @param username  user name of sender
+	 * @param text   content
+	 */
+	public void append(String username, String text) {
+		String msg = username + " said: " + text + "\n";
+		JLabel show = new JLabel(msg);
+		panel_2.add(show);
+		panel_2.revalidate();
+		//append("123",new ImageIcon("C:/Users/CFS/Desktop/Screenshots/IMG_0788.JPG"));
+	}
+
+	/**
+	 *  refresh chatroom and clear content
+	 * @throws RemoteException 
+	 */
+	public void refresh() throws RemoteException {
+		this.getUserList();
+	}
+
+	/**
+	 * start displaying the chatroom
+	 * @throws RemoteException 
+	 */
+	public void start() throws RemoteException {
+		setVisible(true);
+		panel_4.add(new JLabel("User List"));
+		panel_4.revalidate();
+	}
+	
+	/**
+	 * @throws RemoteException
+	 */
+	public void getUserList() throws RemoteException{
+		panel_4.removeAll();
+		panel_4.add(new JLabel("User List"));
+		for(IReceiver receiver: model.getChatStubs()){
+			panel_4.add(new JLabel(receiver.getUserStub().getName()));
+			panel_4.revalidate();
+		}
+	}
+
+	/**
+	 * @param username  username of sender
+	 * @param img  image content
+	 */
+	public void append(String username, ImageIcon img) {
+		JLabel auth = new JLabel(username + " said: \n");
+		JLabel msg = new JLabel(img);
+		panel_2.add(auth);
+		panel_2.add(msg);
+		panel_2.add(Box.createVerticalStrut(10));
+		panel_2.revalidate();
+	}
+
+	/**
+	 * image view
+	 * @return  panel to contain image view
+	 */
+	public Container createImageView() {
+		return panel_2;
+	}
+	
+	public void addComponent(Component comp) {
+		append("DataPacket","install a component in text panel \n");
+		panel_2.add(comp);
+	}
+}

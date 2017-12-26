@@ -1,0 +1,393 @@
+package model;
+
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.rmi.AccessException;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.function.Consumer;
+
+import javax.swing.JPanel;
+
+import common.IChatRoom;
+import common.IComponentFactory;
+import common.IReceiver;
+import common.IUser;
+import controller.MiniController;
+import provided.rmiUtils.IRMIUtils;
+import provided.rmiUtils.IRMI_Defs;
+import provided.rmiUtils.RMIUtils;
+import model.User;
+
+/**
+ * @author 
+ *
+ */
+public class MainModel {
+	private Consumer<String> outputCmd = new Consumer<String>(){
+    	@Override
+		public void accept(String t) {
+			model2ViewAdapter.append(String.valueOf(t) + "\n");
+		}
+    };
+	/**
+	 * registry for searching machine
+	 */
+	private Registry registry;
+
+	/**
+	 * RMI util object
+	 */
+	private IRMIUtils rmiUtils = new RMIUtils(outputCmd);
+
+	/**
+	 * user name of program
+	 */
+	private String username = "ry13";
+	/**
+	 * local chat connections
+	 */
+	private HashSet<Receiver> chatConnections = new HashSet<Receiver>();
+	/**
+	 * remote chat connection stub
+	 */
+//	private HashSet<IReceiver> chatConnectionStubs = new HashSet<IReceiver>();
+	/**
+	 *  joined chatrooms set
+	 */
+	private HashSet<ChatRoom> chatrooms = new HashSet<ChatRoom>();
+	
+	private HashMap<ChatRoom, ChatRoom> localToRemoteChatrooms = new HashMap<ChatRoom, ChatRoom>();
+
+	/**
+	 * chatroom to mini controller mapper
+	 */
+	private HashMap<IChatRoom, MiniController> chatroomToMiniController = new HashMap<IChatRoom, MiniController>();
+	
+	/**
+	 * room count integer
+	 */
+	private int roomCount = 1;
+	/**
+	 * port shift integer
+	 */
+	private int portCount = 0;
+	
+	private int receivePort = 2101;
+	/**
+	 * maximum number of valid running program
+	 */
+	private final int MAX_APP_NUM = 8;
+	/**
+	 * model to GUI adapter
+	 */
+	private IViewAdapter model2ViewAdapter;
+	
+	private IMiniMVCAdapter miniMVCAdapter;
+	/**
+	 * private user object
+	 */
+	private User user;
+	
+	private IUser userStub;
+
+	/**
+	 * constructor of model
+	 * @param model2ViewAdapter  model to view adapter
+	 */
+	public MainModel(IViewAdapter model2ViewAdapter) {
+		this.model2ViewAdapter = model2ViewAdapter;
+	}
+
+	/**
+	 * close chat room
+	 * @param miniView
+	 */
+	public void closeRoom(JPanel miniView) {
+		model2ViewAdapter.closeRoom(miniView);
+
+		roomCount--;
+	}
+
+	/**
+	 * @throws SocketException
+	 * @throws UnknownHostException
+	 */
+	public void start() throws SocketException, UnknownHostException {
+
+		while (portCount <= MAX_APP_NUM) {
+			rmiUtils.startRMI(IRMI_Defs.CLASS_SERVER_PORT_CLIENT + portCount);
+
+			try {
+				user = new User(username, rmiUtils.getLocalAddress());
+				registry = rmiUtils.getLocalRegistry();
+				userStub = (IUser) UnicastRemoteObject.exportObject(user, 2100 + portCount);
+				registry.rebind(IUser.BOUND_NAME, userStub);
+
+//				IChatRoom room = new ChatRoom("Room-" + roomCount);
+//				makeMiniMVC(room, new Receiver(user, room));
+
+				break;
+			} catch (Exception e) {
+
+			}
+
+			portCount++;
+		}
+	}
+
+	/**
+	 * Connect to remote host and get list of chatroom
+	 * @param remoteHost  remote host
+	 * @return  info message
+	 */
+	public String connectTo(String remoteHost) {
+		IUser remoteStub = null;
+		try {
+			registry = rmiUtils.getRemoteRegistry(remoteHost);
+			remoteStub = (IUser) registry.lookup(IUser.BOUND_NAME);
+			remoteStub.connect(userStub);
+			
+			HashSet<IChatRoom> chatrooms = new HashSet<>();
+			   for(IChatRoom temproom: remoteStub.getChatRooms()) {
+			    chatrooms.add(temproom);
+			   }
+			
+			model2ViewAdapter.setChatroomList(chatrooms);
+			
+//			model2ViewAdapter.setChatroomList((HashSet<IChatRoom>)remoteStub.getChatRooms());
+		} catch (Exception e) {
+			System.err.println("ConnectTo exception:" + "\n");
+			e.printStackTrace();
+		}
+		// TODO add chatroom list
+		return "SUCCESS: connected to remote host: " + remoteHost;
+	}
+
+	/**
+	 * Create new chatroom
+	 * @throws RemoteException
+	 * @throws NotBoundException
+	 */
+	public void createRoom() throws RemoteException, NotBoundException {
+		
+		IChatRoom room = new ChatRoom("Room-" + roomCount);
+		Receiver createdConnection = new Receiver(user, room, new Cmd2ViewAdapter(){
+
+			@Override
+			public void appendMsg(String text) {
+				miniMVCAdapter.append(text);
+			}
+
+			@Override
+			public void buildScrollableComponent(IComponentFactory fac) {
+				if (fac.makeComponent() != null)
+					miniMVCAdapter.addComponent(fac.makeComponent());
+			}
+
+			@Override
+			public void refresh() {
+				miniMVCAdapter.refresh();
+			}
+
+			@Override
+			public void buildNonScrollableComponent(IComponentFactory fac) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
+		this.miniMVCAdapter = model2ViewAdapter.makeMiniMVC(room, user, createdConnection);
+		IReceiver chatstub = (IReceiver) UnicastRemoteObject.exportObject(createdConnection, receivePort + portCount);
+		chatConnections.add(createdConnection);
+		room.addIReceiverStubLocally(chatstub);
+		user.addRoom(room);
+		chatrooms.add((ChatRoom)room);
+		roomCount++;
+		
+//		System.out.println("newRoom:"+room.getId());
+	}
+
+	/**
+	 * Create new mini UI representing new chatroom
+	 * @param chatroom  chatroom object
+	 * @param connection  chat connection associated to chatroom
+	 * @throws AccessException
+	 * @throws RemoteException
+	 * @throws NotBoundException
+	 */
+//	public void makeMiniMVC(IChatRoom chatroom, IConnection connection)
+//			throws AccessException, RemoteException, NotBoundException {
+//		IConnection chatstub = null;
+//		try {
+//			chatstub = (IConnection) UnicastRemoteObject.exportObject(connection, IConnection.BOUND_PORT + portCount);
+//			registry.rebind(IConnection.BOUND_NAME, chatstub);
+//			chatroom.addConnection(chatstub);
+//		} catch (Exception e) {
+//			chatstub = (IConnection) registry.lookup(IConnection.BOUND_NAME);
+//		}
+//		//System.out.println(chatstub.getUser().getName());
+//		user.getChatrooms().add(chatroom);
+//		MiniController miniController = model2ViewAdapter.makeMiniMVC("Room-" + roomCount, (Receiver) connection,
+//				null);
+//		chatroomToMiniController.put(chatroom, miniController);
+//		chatrooms.add((ChatRoom) chatroom);
+//		miniController.getMiniModel().setChatStub(chatstub);
+//		miniController.getMiniModel().setChatroom(chatroom);
+//		miniController.getMiniModel().setChatrooms(chatrooms);
+//		roomCount++;
+//
+//	}
+
+	/**
+	 * set user name
+	 * @param username  name
+	 * @throws RemoteException
+	 */
+	public void setUsername(String username) throws RemoteException {
+		//user.setName(username);
+		this.username = username;
+	}
+
+	/**
+	 * Join a remote chatroom
+	 * @param remoteChatroom  remote chatroom object
+	 * @throws RemoteException
+	 */
+	public void joinRoom(IChatRoom remoteChatroom) throws RemoteException {
+
+		if (null == remoteChatroom) {
+			System.out.println("ERROR: connect and select chatroom first");
+			return;
+		}
+
+		Iterable<IReceiver> remoteConnections = remoteChatroom.getIReceiverStubs();
+		if (remoteConnections == null) {
+			System.out.println("remote connection is null");
+			return;
+		}
+
+
+		for (ChatRoom cr : chatrooms) {
+			if (localToRemoteChatrooms.containsKey(cr) && localToRemoteChatrooms.get(cr).equals(remoteChatroom)) {
+				System.out.println("You're already in this chatroom");
+				return;
+			}
+		}
+		
+		Receiver createdConnection = new Receiver(user, remoteChatroom, new Cmd2ViewAdapter(){
+
+			@Override
+			public void appendMsg(String text) {
+				miniMVCAdapter.append(text);
+			}
+
+			@Override
+			public void buildScrollableComponent(IComponentFactory fac) {
+				if (fac.makeComponent() != null)
+					miniMVCAdapter.addComponent(fac.makeComponent());
+			}
+
+			@Override
+			public void refresh() {
+				miniMVCAdapter.refresh();
+			}
+
+			@Override
+			public void buildNonScrollableComponent(IComponentFactory fac) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
+		IChatRoom room = new ChatRoom("Room-" + roomCount);
+		this.miniMVCAdapter = model2ViewAdapter.makeMiniMVC(room, user, createdConnection);
+		IReceiver chatstub = (IReceiver) UnicastRemoteObject.exportObject(createdConnection, receivePort + portCount);
+		chatConnections.add(createdConnection);
+		createdConnection.setReceiverStub(chatstub);
+		remoteChatroom.addIReceiverStub(chatstub);
+
+		user.addRoom(remoteChatroom);
+		chatrooms.add((ChatRoom)remoteChatroom);
+		roomCount++;
+
+
+//		IChatroom chatroom = new ChatRoom("Room-" + roomCount);
+//		IConnection chatConnection = new Receiver(user, chatroom);
+//		chatConnections.add(chatConnection); 
+//
+//		try {
+//			IConnection stub = (IConnection) UnicastRemoteObject.exportObject(chatConnection,
+//					IConnection.BOUND_PORT + portCount);
+//			chatConnectionStubs.add(stub);
+//
+//			for (IConnection remoteConnection : remoteConnections) {
+//				chatroom.addConnection(remoteConnection);
+//
+//				if (remoteConnection.addConnectionStubToChatroom(stub)) {
+//					System.out.println("SUCCESS: add local server to remote chatroom");
+//				} else {
+//					System.out.println("ERROR: attempted to add local server to remote chatroom");
+//				}
+//			}
+//
+//			chatroom.addConnection(stub);
+//			user.getChatrooms().add(chatroom);
+//			chatrooms.add((ChatRoom) chatroom);
+//
+//			MiniController miniController = model2ViewAdapter.makeMiniMVC("Room-" + roomCount, (Receiver) chatConnection,
+//					null);
+//			chatroomToMiniController.put(chatroom, miniController);
+//			localToRemoteChatrooms.put((ChatRoom)chatroom, (ChatRoom)remoteChatroom);
+//			miniController.getMiniModel().setChatStub(stub);
+//			miniController.getMiniModel().setChatroom(chatroom);
+//			miniController.getMiniModel().setChatrooms(chatrooms);
+//			roomCount++;
+//
+//			// TODO remove chatroom list?
+//
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+	}
+
+
+	/**
+	 * Quit program and leave all chatroom
+	 */
+	public void quit() {
+		System.out.println(" client is quitting.");
+		try {
+			for (Receiver chatStub : chatConnections) {
+//				chatStub.getUserStub().getChatRooms().remove(((Receiver)chatStub).getChatroom());
+				chatStub.getChatroom().removeIReceiverStub(chatStub);
+				
+				
+//				HashSet<IReceiver> remoteStubs = chatStub.getChatroom().getConnections();
+//				for (IConnection remoteStub : remoteStubs) {
+//					remoteStub.RemoveConnectionStubFromChatroom(chatStub);
+//				}
+			}
+			registry.unbind(IUser.BOUND_NAME);
+			rmiUtils.stopRMI();
+
+		} catch (Exception e) {
+			System.err.println(" Error stopping class server: " + e);
+		}
+		System.exit(0);
+	}
+	
+	public void removeChatRoom(IChatRoom chatroom) throws RemoteException{
+		for(IChatRoom ichatroom : chatrooms){
+			if(ichatroom.getUUID().equals(chatroom.getUUID())){
+				chatrooms.remove(chatroom);
+			}
+		}
+		user.removeRoom(chatroom);
+	}
+
+}

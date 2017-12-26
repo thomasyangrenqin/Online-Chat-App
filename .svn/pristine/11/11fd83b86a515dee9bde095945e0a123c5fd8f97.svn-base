@@ -1,0 +1,315 @@
+package model;
+
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Image;
+import java.io.File;
+import java.rmi.RemoteException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+
+import command.FileCmd;
+import command.ImageCmd;
+import command.InstallCmd;
+import command.StringCmd;
+import command.UnknownCmd;
+import common.DataPacketAlgoCmd;
+import common.DataPacketChatRoom;
+import common.IAddReceiverType;
+import common.IChatRoom;
+import common.ICmd2ModelAdapter;
+import common.IComponentFactory;
+import common.IInstallCmdType;
+import common.IReceiver;
+import common.IRemoveReceiverType;
+import common.IRequestCmdType;
+import common.IUser;
+import provided.datapacket.*;
+
+public class Receiver implements IReceiver{
+	/**
+	 * chat room owner
+	 */
+	private IUser user;
+	/**
+	 * the wrapped chatroom
+	 */
+	private IChatRoom chatRoom;
+	
+	private UUID uuid = UUID.randomUUID();
+	
+	private Map<Class<?>, DataPacketAlgoCmd<?>> cmdMap = new HashMap<>();
+
+	private Map<Class<?>, List<DataPacketChatRoom<?>>> messageCache = new HashMap<>();
+	
+	private Cmd2ViewAdapter cmd2ModelAdapter;
+	
+	private IReceiver receiverStub;
+	
+	
+	
+
+//	/**
+//	 * connection to main view adapter
+//	 */
+//	private IViewAdapter connection2MainViewAdapter;
+//	
+//	private Connection2MinimodelAdapter connection2MinimodelApdater;
+	/**
+	 * data parsing algorithm
+	 */
+	private DataPacketAlgo<String, String> dataPacketAlgo = new DataPacketAlgo<String, String>(new DataPacketAlgoCmd<Object>(){
+
+		private static final long serialVersionUID = -3838770346677745909L;
+
+		@Override
+		public String apply(Class<?> id, DataPacketChatRoom<Object> host, String... params) {
+			Object x = host.getData();
+			try {
+				cmd2ModelAdapter.appendMsg(host.getSender().getUserStub().getName(),"Default case called. successfully process data " + x);
+			} catch (RemoteException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			List<DataPacketChatRoom<?>> cache = messageCache.getOrDefault(id, new LinkedList<DataPacketChatRoom<?>>());
+			cache.add(host);
+			messageCache.put(id, cache);
+			
+			try {
+				host.getSender().receive(new DataPacketChatRoom<IRequestCmdType>(IRequestCmdType.class, new UnknownCmd(id), receiverStub));
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+			return "Default case called. data = "+ x;
+		}	
+
+		@Override
+		public void setCmd2ModelAdpt(ICmd2ModelAdapter cmd2ModelAdpt) {
+			// not used.
+		}
+	});
+
+//	/**
+//	 * set connection to main view adapter
+//	 * @param connection2MainViewAdapter the adpater
+//	 */
+//	public void setConnection2MainViewAdapter(IViewAdapter connection2MainViewAdapter) {
+//		this.connection2MainViewAdapter = connection2MainViewAdapter;
+//	}
+//
+//	/**
+//	 * set connection to mini view adapter
+//	 * @param connection2MiniModelAdapter
+//	 */
+//	public void setConnection2MiniModelAdapter(Connection2MinimodelAdapter connection2MiniModelAdapter) {
+//		this.connection2MinimodelApdater = connection2MiniModelAdapter;
+//	}
+
+	/**
+	 * Constructor of ChatServer object
+	 * @param user
+	 * @param chatroom
+	 */
+	public Receiver(IUser user, IChatRoom chatroom, Cmd2ViewAdapter cmd2ModelAdapter) {
+		this.user = user;
+		this.chatRoom = chatroom;
+		this.cmd2ModelAdapter = cmd2ModelAdapter;
+		cmdMap.put(String.class, new StringCmd());
+		cmdMap.put(ImageIcon.class, new ImageCmd());
+		cmdMap.put(File.class, new FileCmd());
+		
+		this.dataPacketAlgo.setCmd(IAddReceiverType.class, new DataPacketAlgoCmd<IAddReceiverType>() {
+
+			private static final long serialVersionUID = 7743660382686579881L;
+			
+			@Override
+			public String apply(Class<?> index, DataPacketChatRoom<IAddReceiverType> host, String... params) {
+				try {
+					cmd2ModelAdapter.appendMsg(host.getSender().getUserStub().getName(),"Case IAddReceiver " + host.getData());
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+//				cmd2ModelAdapter.refresh();
+			
+				chatRoom.addIReceiverStubLocally(host.getData().getReceiverStub());
+				cmd2ModelAdapter.refresh();
+				return null;
+			}
+
+			@Override
+			public void setCmd2ModelAdpt(ICmd2ModelAdapter cmd2ModelAdpt) {
+			}
+		});
+		
+		this.dataPacketAlgo.setCmd(IRemoveReceiverType.class, new DataPacketAlgoCmd<IRemoveReceiverType>() {
+
+			
+			@Override
+			public String apply(Class<?> index, DataPacketChatRoom<IRemoveReceiverType> host, String... params) {
+				try {
+					cmd2ModelAdapter.appendMsg(host.getSender().getUserStub().getName(),"Case IRemoveReceiver " + host.getData());
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				chatRoom.removeIReceiverStubLocally(host.getData().getReceiverStub());
+				cmd2ModelAdapter.refresh();
+				return null;
+			}
+
+			@Override
+			public void setCmd2ModelAdpt(ICmd2ModelAdapter cmd2ModelAdpt) {
+			}
+		});
+		
+		this.dataPacketAlgo.setCmd(IRequestCmdType.class, new DataPacketAlgoCmd<IRequestCmdType>() {
+			
+			@Override
+			public String apply(Class<?> index, DataPacketChatRoom<IRequestCmdType> host, String... params) {
+				Class<?> cmdId = host.getData().getCmdId();
+				System.out.println(cmdId);
+				try {
+					cmd2ModelAdapter.appendMsg(host.getSender().getUserStub().getName() ,"IUnknownCmd " + cmdId);
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				try {
+					cmd2ModelAdapter.appendMsg(host.getSender().getUserStub().getName(),"request command from me " + cmdMap.get(cmdId));
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				try {
+					System.out.println(cmdMap.containsKey(cmdId));
+					host.getSender().receive(new DataPacketChatRoom<IInstallCmdType>(IInstallCmdType.class, new InstallCmd(cmdId, cmdMap.get(cmdId)), receiverStub));
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
+				return null;
+			}
+
+			@Override
+			public void setCmd2ModelAdpt(ICmd2ModelAdapter cmd2ModelAdpt) {
+			}
+		});
+		
+		this.dataPacketAlgo.setCmd(IInstallCmdType.class,  new DataPacketAlgoCmd<IInstallCmdType>(){
+			private static final long serialVersionUID = 2853224131272935836L;
+			@Override
+			public String apply(Class<?> index, DataPacketChatRoom<IInstallCmdType> host, String... params) {
+				Class<?> cmdId = host.getData().getCmdId();
+				DataPacketAlgoCmd<?> cmd = host.getData().getCmd();
+//				System.out.println("Gao ge send cmd");
+				cmd.setCmd2ModelAdpt(cmd2ModelAdapter);
+				dataPacketAlgo.setCmd(cmdId, cmd);
+				System.out.println("Successfully installed command for " + host.getData().getCmdId());
+				for (DataPacketChatRoom<?> packet : messageCache.get(cmdId))
+					packet.execute(dataPacketAlgo);
+//				try {
+//					host.getSender().receive(new DataPacketChatRoom<IFailureStatusType>(IFailureStatusType.class, new MyFailureStatus(host, "Test error info"), receiverStub));
+//				} catch (RemoteException e) {
+//					e.printStackTrace();
+//				}
+				return null;
+			}
+			@Override
+			public void setCmd2ModelAdpt(ICmd2ModelAdapter cmd2ModelAdpt) {
+				
+			}
+		});
+	}
+
+
+//	public boolean addConnectionStubToChatroom(IConnection connectionStub) throws RemoteException{
+//		HashSet<IConnection> connections = chatroom.getConnections();
+//		if (connections.contains(connectionStub)) {
+//			return false;
+//		}
+//		connections.add(connectionStub);
+//		return true;
+//	}
+//
+//	@Override
+//	public boolean RemoveConnectionStubFromChatroom(IConnection chatStub) throws RemoteException {
+//		HashSet<IConnection> connections = chatroom.getConnections();
+//		if (!connections.contains(chatStub)) {
+//			return false;
+//		}
+//		connections.remove(chatStub);
+//		return true;
+//	}
+
+	@Override
+	public <T> void receive(DataPacketChatRoom<T> data) throws RemoteException {
+		data.execute(dataPacketAlgo);
+	}
+
+
+
+	@Override
+	public IUser getUserStub() throws RemoteException {
+		return this.user;
+	}
+	
+	public IChatRoom getChatroom() throws RemoteException{
+		return chatRoom;
+	}
+	
+	public <T> Collection<DataPacketChatRoom<T>> sendPacket(DataPacketChatRoom<T> data, IChatRoom room) {
+		System.out.println("[User.sendPacket() ] " + data);
+		room.sendPacket(data);
+		return null;
+	}
+	
+	public DataPacketAlgoCmd<?> getCmd(Class<?> id) throws RemoteException {
+		return cmdMap.get(id);
+	}
+
+	@Override
+	public UUID getUUID() throws RemoteException {
+		return uuid;
+	}
+	
+	public IReceiver getReceiverStub() {
+		return receiverStub;
+	}
+
+	public void setReceiverStub(IReceiver receiverStub) {
+		this.receiverStub = receiverStub;
+	}
+	
+	public boolean equals(Object other){
+		if (other instanceof IReceiver) {
+			try {
+				return uuid.equals(((IReceiver)other).getUUID());
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+		}
+		return false;
+	}
+
+	
+//	@Override
+//	public IDataPacketAlgoCmd<?> getNewCommand(Class<?> requestClass) throws RemoteException {
+//		return (IDataPacketAlgoCmd<?>) dataPacketAlgo.getCmd(requestClass);
+//	}
+//
+//	@Override
+//	public void setDataPacketAlgo(DataPacketAlgo<String, IConnection> dataPacketAlgo) throws RemoteException {
+//		this.dataPacketAlgo = dataPacketAlgo;
+//	}
+	
+
+}

@@ -1,0 +1,49 @@
+package command;
+
+import java.awt.Component;
+import java.rmi.RemoteException;
+
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+
+import common.DataPacketAlgoCmd;
+import common.DataPacketChatRoom;
+import common.ICmd2ModelAdapter;
+import common.IComponentFactory;
+
+/**
+ * A pre-installed command used to deal with image type message which is belong to unknown data type.
+ * @author Renqin Yang
+ * @author Qizhen Guo
+ */
+public class ImageCmd extends DataPacketAlgoCmd<ImageIcon>{
+	/**
+	 * The generate serial version id.
+	 */
+	private static final long serialVersionUID = 4399732689897148902L;
+	private transient ICmd2ModelAdapter cmd2ModelAdpt;
+	
+	@Override
+	public String apply(Class<?> index, DataPacketChatRoom<ImageIcon> host, String... params) {
+		ImageIcon img = host.getData();
+		try {
+			cmd2ModelAdpt.buildScrollableComponent(new IComponentFactory(){
+				@Override
+				public Component makeComponent() {
+					JLabel label = new JLabel(img);
+					return label;
+				}
+				
+			}, host.getSender().getUserStub().getName());
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+		System.out.println("Got a Image data. data = "+ img.toString());
+		return null;
+	}
+
+	@Override
+	public void setCmd2ModelAdpt(ICmd2ModelAdapter cmd2ModelAdpt) {
+		this.cmd2ModelAdpt = cmd2ModelAdpt;
+	}
+}

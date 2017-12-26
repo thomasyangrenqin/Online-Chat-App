@@ -1,0 +1,86 @@
+package common;
+
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+import java.util.HashSet;
+import java.util.UUID;
+
+/**
+ * User interface
+ * It contains its id, ip address, name and the list of chatroom owned by the user, 
+ * and a User type stub for the remote host.
+ */
+public interface IUser extends Remote {
+	
+	/**
+	 * The name that  the IUser object will use to bound to in the RMI Registry
+	 */
+	public static final String BOUND_NAME = "User";
+
+	/**
+	 * The port that the client will use to communicate with the IUser object
+	 */
+	public static final int BOUND_PORT = 2100;
+	
+	/**
+	 * Get user name 
+	 * @return the name of the user
+	 * @throws RemoteException exception
+	 **/
+	public String getName() throws RemoteException;
+	
+	/**
+	 * Get a unique id of the user
+	 * @return A unique id of the user
+	 * @throws RemoteException exception
+	 */
+	public UUID getId() throws RemoteException;
+
+	/**
+	 * Get IP address of this user 
+	 * @return a IP address for this user
+	 * @throws RemoteException exception
+	 */
+	public String getIP() throws RemoteException;
+	
+	/**
+	 * Add a connected remote user into the connected user list.
+	 * @param remoteuserStub the stub of the remote user.
+	 * @throws RemoteException exception
+	 */
+	public void addConnectedUser(IUser remoteuserStub) throws RemoteException;
+	
+	/**
+	 * Remove a formerly connected remote user from the connected user list.
+	 * @param remoteuserStub the stub of the remote user.
+	 * @throws RemoteException exception
+	 */
+	public void removeConnectedUser(IUser remoteuserStub) throws RemoteException;
+	
+	/**
+	 * Get the connected user list.
+	 * @return the connected user list.
+	 * @throws RemoteException exception
+	 */
+	public HashSet<IUser> getConnectedUserList() throws RemoteException;
+
+	/**
+	 * This method is used to join a remote chatroom. By getting a remote chatroom, the local user
+	 * could first create a new own chatroom which has this new connection. Then adding all connections on the
+	 * remote chatroom into the new local chatroom, also add this new connection to the remote chatroom. 
+	 * In the meantime, add this new connection to each chatroom which associated with the each connection in 
+	 * the remote chatroom.
+	 * @param chatroom A remote chatRoom from remote user
+	 * @return a new connection
+	 * @throws RemoteException exception
+	 */
+	public IConnection joinChatroom(IChatroom chatroom) throws RemoteException;
+	
+	/**
+	 * Get the list of chatrooms of the user
+	 * @return a HashSet of chatrooms
+	 * @throws RemoteException exception
+	 * */
+	public HashSet<IChatroom> getChatrooms() throws RemoteException;
+
+}

@@ -1,0 +1,52 @@
+package common;
+
+import java.io.Serializable;
+import java.util.HashSet;
+import java.util.UUID;
+
+import provided.datapacket.ADataPacket;
+
+/**
+ * Chatroom interface.
+ * It contains its id, the list of connections in this chatroom.
+ */
+public interface IChatroom extends Serializable{
+
+	/**
+	 * Get a unique id of the chatroom
+	 * @return A unique id of the chatroom
+	 */
+	public UUID getId();
+
+	/**
+	 * List of connections of the chatroom
+	 * @return A set of all the chatServer stubs in this chatroom
+	 */
+	public HashSet<IConnection> getConnections();
+
+	/**
+	 * Get the display name of the chatroom 
+	 * @return the chatroom display name
+	 */
+	public String getName();
+	
+	/**
+	 * Add a specified Connection to the list of connection of the chatroom.
+	 * @param connection the Connection to be added.
+	 * @return whether allowed to add the connection.
+	 */
+	public boolean addConnection(IConnection connection);
+
+	/**
+	 * Remove the specified Connection from the list of connection of the chatroom.
+	 * @param connection the Connection to be removed.
+	 * @return whether allowed to remove the connection.
+	 */
+	public boolean removeConnection(IConnection connection);
+
+	/**
+	 * Send the message(dataPacket) to all other users(except self) in the chatroom.
+	 * @param message The message(dataPacket) to be sent
+	 */
+	public void send(ADataPacket message);
+}

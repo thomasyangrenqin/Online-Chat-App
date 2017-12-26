@@ -1,0 +1,18 @@
+package model;
+
+import common.IAddReceiverType;
+import common.IReceiver;
+
+public class AddReceiver implements IAddReceiverType{
+	private IReceiver _receiver;
+	
+	public AddReceiver(IReceiver receiver){
+		this._receiver = receiver;
+	}
+
+	@Override
+	public IReceiver getReceiverStub() {
+		return _receiver;
+	}
+	
+}

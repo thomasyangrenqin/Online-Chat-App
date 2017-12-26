@@ -1,0 +1,38 @@
+package command;
+
+import java.awt.Component;
+
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+
+import common.DataPacketAlgoCmd;
+import common.DataPacketChatRoom;
+import common.ICmd2ModelAdapter;
+import common.IComponentFactory;
+
+public class ImageCmd extends DataPacketAlgoCmd<ImageIcon>{
+	private transient ICmd2ModelAdapter cmd2ModelAdpt;
+	
+	@Override
+	public String apply(Class<?> index, DataPacketChatRoom<ImageIcon> host, String... params) {
+		ImageIcon img = host.getData();
+		cmd2ModelAdpt.buildComponent(new IComponentFactory(){
+			@Override
+			public Component makeScrollableComponent() {
+				JLabel label = new JLabel(img);
+				return label;
+			}
+			@Override
+			public Component makeNonScrollableComponent() {
+				return null;
+			}
+		});
+		System.out.println("Image case called. data = "+ img.toString());
+		return null;
+	}
+
+	@Override
+	public void setCmd2ModelAdpt(ICmd2ModelAdapter cmd2ModelAdpt) {
+		this.cmd2ModelAdpt = cmd2ModelAdpt;
+	}
+}

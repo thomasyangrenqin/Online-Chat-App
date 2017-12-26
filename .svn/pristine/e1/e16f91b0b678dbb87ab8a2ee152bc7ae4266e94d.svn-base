@@ -1,0 +1,126 @@
+package model;
+
+import java.rmi.RemoteException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.UUID;
+
+import common.DataPacketChatRoom;
+import common.IAddReceiverType;
+import common.IChatRoom;
+import common.IReceiver;
+import common.IRemoveReceiverType;
+import provided.datapacket.ADataPacket;
+
+/**
+ * A concrete chatroom class
+ */
+public class ChatRoom implements IChatRoom{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -5207620380615489899L;
+	/**
+	 * the id of the chat room
+	 */
+	private UUID uuid;
+	/**
+	 * the name of the chat room
+	 */
+	private String name;
+	/**
+	 * connection list
+	 */
+	private HashSet<IReceiver> receives = new HashSet<IReceiver>();
+
+	/**
+	 * Constuctor of the chatroom class
+	 * @param name  chatroom name
+	 */
+	public ChatRoom(String name) {
+		this.uuid = UUID.randomUUID();
+		this.name = name;
+	}
+	
+	@Override
+	public UUID getUUID() {
+		return uuid;
+	}
+
+	@Override
+	public String getName() {
+		return name;
+	}
+
+
+//	public void setName(String name) {
+//		this.name = name;
+//	}
+
+	@Override
+	public Collection<IReceiver> getIReceiverStubs(){
+		return receives;
+	}
+
+
+	@Override
+	public <T> void sendPacket(DataPacketChatRoom<T> data) {
+		(new Thread() {
+			public void run() {
+				super.run();
+				receives.iterator().forEachRemaining((receive) -> {
+					try {
+						System.out.println("success receive!!!!");
+						receive.receive(data);
+					} catch (RemoteException e) {
+						e.printStackTrace();
+					}
+				});
+			}
+		}).start();
+	}
+	
+	@Override
+	public String toString() {
+		return this.getName();
+	}
+
+//	@Override
+//	public boolean addIReceiverStub(IReceiver receiver) {
+//		boolean res = addIReceiverStubLocally(receiver);
+////		sendPacket(new DataPacketChatRoom<AddReceiver>(AddReceiver.class, new AddReceiver(receiver), receiver));
+//		sendPacket(new DataPacketChatRoom<IAddReceiverType>(IAddReceiverType.class, new AddReceiver(receiver), receiver));
+//		return res;
+//	}
+//
+//	@Override
+//	public boolean removeIReceiverStub(IReceiver receiver) {
+//		boolean res = removeIReceiverStubLocally(receiver);
+//		sendPacket(new DataPacketChatRoom<IRemoveReceiverType>(IRemoveReceiverType.class, new RemoveReceiver(receiver), receiver));
+//		System.out.println("already send packet");
+//		return res;
+//	}
+
+	@Override
+	public boolean addIReceiverStubLocally(IReceiver receiver) {
+		return receives.add(receiver);
+	}
+
+	@Override
+	public boolean removeIReceiverStubLocally(IReceiver receiver) {
+		return receives.remove(receiver);
+	}
+	
+	public boolean equals(Object other) { 
+		if (other instanceof ChatRoom) {
+			return uuid.equals(((IChatRoom)other).getUUID());
+		}
+		return false;
+	}
+	
+//	@Override
+//	public boolean equals(Object chatroom){
+//		if(this.uuid.equals(((IChatroom) chatroom).getId())) return true;
+//		else  return false;
+//	}
+}

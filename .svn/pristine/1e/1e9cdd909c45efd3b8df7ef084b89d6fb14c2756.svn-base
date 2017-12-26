@@ -1,0 +1,93 @@
+package model;
+
+
+import java.util.HashSet;
+import javax.swing.JPanel;
+
+import common.IChatRoom;
+import controller.MiniController;
+
+/**
+ * adapter to connect main model and main GUI
+ */
+public interface IViewAdapter {
+	/**
+	 * Append information to info panel
+	 * @param s
+	 */
+	public void append(String s);
+
+	/**
+	 * set remote host address
+	 * @param hostAddress  remote host address
+	 */
+	public void setRemoteHost(String hostAddress);
+
+	/**
+	 * append warning message 
+	 * @param s  warning message
+	 */
+	public void warning(String s);
+
+	/**
+	 * remove chatroom  list
+	 */
+	public void removeChatroomList();
+
+	/**
+	 * @param roomname   name of the chatroom
+	 * @param connection  chatroom connection
+	 * @param connectionProxys  chatroom connection wrapper
+	 * @return  mini controller associated to mini model
+	 */
+	@SuppressWarnings("rawtypes")
+	public IMiniMVCAdapter makeMiniMVC(IChatRoom chatRoom, User user, Receiver receiver);
+
+	/**
+	 * @param miniView
+	 */
+	public void closeRoom(JPanel miniView);
+
+	/**
+	 * @param chatrooms
+	 */
+	@SuppressWarnings("rawtypes")
+	public void setChatroomList(HashSet chatrooms);
+
+	/**
+	 * no-op object
+	 */
+	public static final IViewAdapter NULL_OBJECT = new IViewAdapter() {
+
+		public void append(String s) {
+
+		}
+
+		public void setRemoteHost(String hostAddress) {
+
+		}
+
+		public void warning(String s) {
+
+		}
+
+		public void removeChatroomList() {
+
+		}
+
+		@SuppressWarnings("rawtypes")
+		public IMiniMVCAdapter makeMiniMVC(IChatRoom chatRoom, User user, Receiver receiver) {
+			return null;
+		}
+
+		public void closeRoom(JPanel miniView) {
+
+		}
+
+		@SuppressWarnings("rawtypes")
+		public void setChatroomList(HashSet chatrooms) {
+
+		}
+
+	};
+}

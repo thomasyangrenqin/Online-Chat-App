@@ -1,0 +1,202 @@
+package view;
+
+import java.awt.BorderLayout;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
+
+import common.IChatRoom;
+
+import javax.swing.JTextField;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JComboBox;
+import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
+import javax.swing.JScrollPane;
+import java.util.HashSet;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+
+/**
+ * Main GUI of the program
+ * @param <TDropListItem>  chatroom itemre
+ */
+public class MainGUI<TDropListItem> extends JFrame {
+	/**
+	 * SerialVersionUId for the class.
+	 */
+	private static final long serialVersionUID = 201611021807L;
+
+	/**
+	 * The default remote host reference.
+	 */
+	private static final String DEFAULT_REMOTE_HOST = "localhost";
+
+	/**
+	 * The adapter to the model.
+	 */
+	private IModelAdapter<TDropListItem> model;
+
+	private JPanel contentPane;
+	private final JPanel panel = new JPanel();
+	private final JTextField textField = new JTextField(DEFAULT_REMOTE_HOST);
+	private final JButton btnConnect = new JButton("Connect");
+	private final JLabel lblRemoteHost = new JLabel("Remote Host:");
+	private final JButton btnJoinChatroom = new JButton("Join Chatroom");
+	private final JButton btnCreateRoom = new JButton("Create Room");
+	private final JButton btnQuit = new JButton("Quit");
+	private final JComboBox<TDropListItem> comboBox = new JComboBox<TDropListItem>();
+	private final JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
+	private final JTextArea textArea = new JTextArea();
+	private final JScrollPane scrollPane = new JScrollPane(textArea);
+
+	/**
+	 * Starts the already initialized frame, making it
+	 * visible and ready to interact with the user.
+	 */
+
+	public void start() {
+
+		setVisible(true);
+
+	}
+
+	/**
+	 * 
+	 * Create the frame.
+	 * @param ma view to model adapter
+	 */
+	public MainGUI(IModelAdapter<TDropListItem> ma) {
+		textArea.setToolTipText("System information displayed here.");
+		textField.setToolTipText("Please input an IP address.");
+		textField.setColumns(10);
+		model = ma;
+		initGUI();
+	}
+
+	private void initGUI() {
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setSize(1000, 400);
+		contentPane = new JPanel();
+		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+		contentPane.setLayout(new BorderLayout(0, 0));
+		setContentPane(contentPane);
+
+		contentPane.add(panel, BorderLayout.NORTH);
+
+		panel.add(lblRemoteHost);
+
+		panel.add(textField);
+		btnConnect.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				connect();
+			}
+		});
+		btnConnect.setToolTipText("Click to connect the Remote Host.");
+
+		panel.add(btnConnect);
+		comboBox.setToolTipText("The list of chat rooms.");
+
+		panel.add(comboBox);
+		btnJoinChatroom.setToolTipText("Join the selected chat room");
+
+		panel.add(btnJoinChatroom);
+		btnCreateRoom.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				model.createRoom();
+			}
+		});
+		btnCreateRoom.setToolTipText("Create a chat room.");
+
+		btnJoinChatroom.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				model.joinRoom(comboBox.getSelectedItem());
+			}
+		});
+
+		panel.add(btnCreateRoom);
+		btnQuit.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				model.quit();
+			}
+		});
+		btnQuit.setToolTipText("Exit the client.");
+
+		panel.add(btnQuit);
+		tabbedPane.setToolTipText("Chat rooms and information.");
+
+		contentPane.add(tabbedPane, BorderLayout.CENTER);
+
+		tabbedPane.addTab("Info", null, scrollPane, null);
+
+		scrollPane.setViewportView(textArea);
+	}
+
+	/**
+	 * Have the model connect to the remote server.
+	 */
+	private void connect() {
+		append("Connecting...\n");
+		append(model.connectTo(textField.getText()) + "\n");
+	}
+
+	/**
+	 * Set the displayed remote host text field to the actual remote system's IP address or host name 
+	 * @param host The name of the remote host 
+	 */
+	public void setRemoteHost(String host) {
+		textField.setText(host);
+	}
+
+	/**
+	 * Append the given string(s) to the view's output text adapter.  
+	 * @param s the string to display.
+	 */
+	public void append(String s) {
+		textArea.append(s);
+		//Force the JScrollPane to go to scroll down to the new text
+		textArea.setCaretPosition(textArea.getText().length());
+	}
+
+	/**
+	 * remove chatroom list
+	 */
+	public void removeChatroomList() {
+		comboBox.removeAllItems();
+	}
+
+	/**
+	 * set chatroom list to drop down list
+	 * @param chatrooms
+	 */
+	@SuppressWarnings("unchecked")
+	public void setChatroomList(HashSet<IChatRoom> chatrooms) {
+		removeChatroomList();
+		System.out.println(chatrooms.size());
+		chatrooms.iterator().forEachRemaining((room) -> {
+			System.out.println(room.toString());
+			System.out.println(room.getName());
+			comboBox.insertItemAt((TDropListItem) room, 0);
+		});
+	}
+
+	/**
+	 * add chat room
+	 * @param name
+	 * @param room
+	 */
+	public void addRoom(String name, JPanel room) {
+		tabbedPane.addTab(name, null, room, null);
+	}
+
+	/**
+	 * remove a chatroom
+	 * @param room
+	 */
+	public void removeRoom(JPanel room) {
+		tabbedPane.remove(room);
+	}
+
+}

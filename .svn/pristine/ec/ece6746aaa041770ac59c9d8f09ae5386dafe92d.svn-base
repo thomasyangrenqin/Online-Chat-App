@@ -1,0 +1,10 @@
+package model;
+
+public interface Connection2MinimodelAdapter {
+	/**
+	 * receive message from connection
+	 * @param username  sender's name
+	 * @param msg  content
+	 */
+	void receiveMsg(String msg);
+}

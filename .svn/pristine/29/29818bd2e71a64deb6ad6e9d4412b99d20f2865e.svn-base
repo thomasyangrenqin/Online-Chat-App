@@ -1,0 +1,195 @@
+package view;
+
+import javax.swing.JPanel;
+import javax.swing.JButton;
+import javax.swing.JTextField;
+
+import common.IReceiver;
+
+import javax.swing.JLabel;
+import java.awt.*;
+
+import java.awt.event.ActionListener;
+import java.rmi.RemoteException;
+import java.awt.event.ActionEvent;
+import javax.swing.JFileChooser;
+
+import javax.swing.Box;
+import javax.swing.ImageIcon;
+import javax.swing.JScrollPane;
+import javax.swing.BoxLayout;
+
+/**
+ * Mini GUI of the chat app
+ * @param <UserItem> 
+ * @author Renqin Yang
+ * @author Qizhen Guo
+ */
+public class MiniGUI<UserItem> extends JPanel {
+
+	/**
+	 * The generate serial version id
+	 */
+	private static final long serialVersionUID = -6010546918888470164L;
+	private JTextField txfInputText;
+	JPanel pnlRoomTextArea = new JPanel();
+	JPanel pnlUserList = new JPanel();
+
+	/**
+	 * The adapter to the model.
+	 */
+	private IMiniModelAdapter<UserItem> model;
+
+	/**
+	 * Create the panel.
+	 * @param ma model to mini view adpater
+	 */
+	public MiniGUI(IMiniModelAdapter<UserItem> ma) {
+		model = ma;
+		setSize(700, 400);
+		setLayout(new BorderLayout(0, 0));
+
+		Panel pblMiniGUI = new Panel();
+
+		add(pblMiniGUI, BorderLayout.NORTH);
+				
+		JScrollPane slpRoom = new JScrollPane();
+		add(slpRoom, BorderLayout.CENTER);
+		pnlRoomTextArea.setToolTipText("The displaying area of the room");
+						
+		slpRoom.setViewportView(pnlRoomTextArea);
+		pnlRoomTextArea.setLayout(new BoxLayout(pnlRoomTextArea, BoxLayout.Y_AXIS));
+				
+		JScrollPane sclUserList = new JScrollPane();
+		add(sclUserList, BorderLayout.EAST);
+		pnlUserList.setToolTipText("Displaying the user list");
+				
+		sclUserList.setViewportView(pnlUserList);
+		pnlUserList.setLayout(new BoxLayout(pnlUserList, BoxLayout.Y_AXIS));
+
+		JPanel pnlOperation = new JPanel();
+		add(pnlOperation, BorderLayout.SOUTH);
+
+		JButton btnUploadFile = new JButton("Upload an image");
+		btnUploadFile.setToolTipText("Click to upload an image to the chat room.");
+		btnUploadFile.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				JFileChooser jfc = new JFileChooser();
+				jfc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+				jfc.showDialog(new JLabel(), "Choose a File");
+				ImageIcon icon = new ImageIcon(jfc.getSelectedFile().getAbsolutePath());
+				Image ob = icon.getImage();
+				ImageIcon m = new ImageIcon(ob);
+				model.sendFile(m);
+			}
+		});
+		pnlOperation.add(btnUploadFile);
+
+		JLabel lblNewMessage = new JLabel("New Message:");
+		pnlOperation.add(lblNewMessage);
+
+		txfInputText = new JTextField();
+		txfInputText.setToolTipText("Input a new message.");
+		pnlOperation.add(txfInputText);
+		txfInputText.setColumns(10);
+
+		JButton btnSend = new JButton("Send");
+		btnSend.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				model.sendMsg(txfInputText.getText());
+			}
+		});
+		btnSend.setToolTipText("Click to send a message");
+		pnlOperation.add(btnSend);
+
+		JButton btnExit = new JButton("Exit");
+		btnExit.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				model.closeRoom();
+			}
+		});
+		btnExit.setToolTipText("Click to exit the chat room.");
+		pnlOperation.add(btnExit);
+	}
+
+	/**
+	 * append message to chat room
+	 * @param username  user name of sender
+	 * @param text   content
+	 */
+	public void append(String username, String text) {
+		String msg = username + " said: " + text + "\n";
+		JLabel show = new JLabel(msg);
+		pnlRoomTextArea.add(show);
+		pnlRoomTextArea.revalidate();
+	}
+
+	/**
+	 *  refresh chatroom and clear content
+	 * @throws RemoteException exception
+	 */
+	public void refresh() throws RemoteException {
+		this.getUserList();
+	}
+
+	/**
+	 * start displaying the chatroom
+	 * @throws RemoteException exception
+	 */
+	public void start() throws RemoteException {
+		setVisible(true);
+		pnlUserList.add(new JLabel("User List"));
+		pnlUserList.revalidate();
+	}
+	
+	/**
+	 * Get and add all the user list to area
+	 * @throws RemoteException exception
+	 */
+	public void getUserList() throws RemoteException{
+		pnlUserList.removeAll();
+		pnlUserList.add(new JLabel("User List"));
+		for(IReceiver receiver: model.getChatStubs()){
+			System.out.println("receiver: " + receiver);
+			System.out.println("userStub: " + receiver.getUserStub());
+			System.out.println("name: " + receiver.getUserStub().getName());
+			pnlUserList.add(new JLabel(receiver.getUserStub().getName()));
+			pnlUserList.revalidate();
+		}
+		pnlUserList.revalidate();
+		pnlUserList.repaint();
+	}
+
+	/**
+	 * append image to chat room
+	 * @param username  username of sender
+	 * @param img  image content
+	 */
+	public void append(String username, ImageIcon img) {
+		JLabel auth = new JLabel(username + " said: \n");
+		JLabel msg = new JLabel(img);
+		pnlRoomTextArea.add(auth);
+		pnlRoomTextArea.add(msg);
+		pnlRoomTextArea.add(Box.createVerticalStrut(10));
+		pnlRoomTextArea.revalidate();
+	}
+
+	/**
+	 * Creat a image view
+	 * image view
+	 * @return  panel to contain image view
+	 */
+	public Container createImageView() {
+		return pnlRoomTextArea;
+	}
+	
+	/**
+	 * Add a component to the view
+	 * @param comp the component to be added
+	 */
+	public void addComponent(Component comp) {
+		append("DataPacket","install a component in text panel \n");
+		pnlRoomTextArea.add(comp);
+	}
+	
+}

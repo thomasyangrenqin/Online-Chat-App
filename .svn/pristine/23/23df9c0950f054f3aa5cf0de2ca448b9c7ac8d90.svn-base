@@ -1,0 +1,19 @@
+package util;
+
+import common.IReceiver;
+import common.IRemoveReceiverType;
+
+public class RemoveReceiver implements IRemoveReceiverType{
+	
+	private IReceiver _receiver;
+	
+	public RemoveReceiver(IReceiver receiver){
+		this._receiver = receiver;
+	}
+
+	@Override
+	public IReceiver getReceiverStub() {
+		return _receiver;
+	}
+
+}

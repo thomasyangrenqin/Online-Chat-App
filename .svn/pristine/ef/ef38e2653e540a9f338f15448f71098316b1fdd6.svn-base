@@ -1,0 +1,47 @@
+package model;
+
+
+import java.awt.Component;
+import java.util.HashSet;
+
+/**
+ * mini MVC Adapter
+ */
+public interface IMiniMVCAdapter {
+	/**
+	 * refresh chat room
+	 */
+	public void refresh();
+
+//	/**
+//	 * set current connection
+//	 * @param chatConnection the connection to be set
+//	 */
+//	@SuppressWarnings("rawtypes")
+//	public void setConnections(HashSet chatConnection);
+	
+	public void append(String text);
+	
+	public void addComponent(Component component);
+
+	/**
+	 * No-op singleton implementation of IModelAdapter
+	 */
+	@SuppressWarnings("rawtypes")
+	public static final IMiniMVCAdapter NULL_OBJECT = new IMiniMVCAdapter() {
+
+		public void refresh() {
+
+		}
+
+		public void append(String text) {
+
+		}
+		
+		public void addComponent(Component component){
+			
+		}
+
+	};
+
+}
